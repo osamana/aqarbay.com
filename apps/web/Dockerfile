@@ -6,7 +6,8 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json ./
-RUN npm install
+# Install sharp for production image optimization
+RUN npm install && npm install sharp
 
 # Rebuild the source code only when needed
 FROM base AS builder
