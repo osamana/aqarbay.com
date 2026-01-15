@@ -1,0 +1,423 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 45 93% 47%;
+    --primary-foreground: 26 83% 14%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 45 93% 47%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Custom Animations */
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 0;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  padding: 0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  min-width: 250px;
+}
+
+/* RTL Support */
+[dir="rtl"] .leaflet-right {
+  left: 10px;
+  right: auto;
+}
+
+[dir="rtl"] .leaflet-left {
+  left: auto;
+  right: 10px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  /* Mobile: Hide sidebar on listings page, make it a dropdown instead */
+  .listings-sidebar {
+    display: none;
+  }
+  
+  /* Mobile: Make category grid 2 columns */
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Mobile: Adjust admin sidebar */
+  .admin-sidebar {
+    position: fixed;
+    z-index: 50;
+  }
+}
+
+/* Smooth transitions for interactive elements */
+@layer components {
+  .hover-scale {
+    @apply transition-transform duration-300 hover:scale-105;
+  }
+  
+  .smooth-shadow {
+    @apply transition-shadow duration-300;
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-xl;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted/30;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/30 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}
+
+/* Selection */
+::selection {
+  @apply bg-yellow-400/20;
+}
+
+/* Focus styles */
+:focus-visible {
+  @apply outline-none ring-2 ring-yellow-400 ring-offset-2;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-500 bg-clip-text text-transparent;
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-2;
+}
+
+/* Image overlay */
+.image-overlay {
+  @apply absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300;
+}
+
+/* Custom Map Markers */
+.custom-marker {
+  background: transparent;
+  border: none;
+}
+
+.custom-marker .marker-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.custom-marker .marker-pin {
+  transition: transform 0.2s ease;
+}
+
+.custom-marker.hovered .marker-pin,
+.custom-marker.selected .marker-pin {
+  transform: scale(1.2);
+}
+
+.custom-marker .marker-price {
+  background: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #D97706;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  margin-top: -4px;
+  transition: all 0.2s ease;
+}
+
+.custom-marker.hovered .marker-price,
+.custom-marker.selected .marker-price {
+  background: #FBBF24;
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+.custom-marker .hovered-pin path:first-child,
+.custom-marker .selected-pin path:first-child {
+  fill: #F59E0B;
+}
+
+/* Custom Property Marker */
+.custom-property-marker {
+  background: transparent;
+  border: none;
+}
+
+.custom-property-marker .marker-pin-wrapper {
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.custom-property-marker:hover .marker-pin-wrapper {
+  transform: scale(1.15);
+  filter: drop-shadow(0 6px 12px rgba(251, 191, 36, 0.4));
+}
+
+/* Leaflet Popup Customization */
+.custom-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border: 2px solid #FCD34D;
+}
+
+.custom-popup .leaflet-popup-tip {
+  border-top-color: #FCD34D;
+}
+
+.leaflet-popup-close-button {
+  color: #6B7280 !important;
+  font-size: 20px !important;
+  padding: 4px 8px !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #111827 !important;
+}
+
+/* Map Controls */
+.leaflet-control-zoom a {
+  background-color: white !important;
+  color: #FBBF24 !important;
+  border: 2px solid #FCD34D !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: #FFFBEB !important;
+  color: #F59E0B !important;
+}
+
+/* Property Card Hover State in Listings */
+[data-property-id] {
+  transition: all 0.2s ease;
+}
+
+[data-property-id]:hover {
+  transform: translateY(-2px);
+}
+
+/* Filter Bar Transitions */
+.filter-bar {
+  transition: all 0.3s ease;
+}
+
+/* Mobile Drawer Animation */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.drawer-enter {
+  animation: slideUp 0.3s ease-out;
+}
+
+.drawer-exit {
+  animation: slideDown 0.3s ease-in;
+}
+
+/* Lightbox Overlay */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lightbox-overlay {
+  animation: fadeIn 0.2s ease;
+}
+
+/* Sticky Sidebar */
+.sticky-sidebar {
+  position: sticky;
+  top: 1rem;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+  .sticky-sidebar {
+    position: static;
+  }
+}
+
+/* Split Screen Layout */
+.split-screen-container {
+  height: calc(100vh - 180px);
+  overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  .split-screen-container {
+    height: auto;
+    overflow: visible;
+  }
+}
+
+/* Property Card in List View */
+.property-list-card {
+  transition: all 0.2s ease;
+}
+
+.property-list-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Booking Panel Animations */
+@keyframes expandForm {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 600px;
+  }
+}
+
+.form-expand {
+  animation: expandForm 0.3s ease-out;
+}
+
+/* Toast Notifications */
+@keyframes toastSlide {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.toast-notification {
+  animation: toastSlide 0.3s ease-out;
+}
+
+/* User Location Marker Animation */
+@keyframes userLocationPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+}
+
+.user-location-marker {
+  background: transparent;
+  border: none;
+}

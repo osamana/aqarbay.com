@@ -1,0 +1,180 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: aqarbay-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aqarbay}
+      POSTGRES_USER: ${POSTGRES_USER:-aqarbay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - aqarbay-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aqarbay}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Only expose port in development - remove in production
+    # ports:
+    #   - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: aqarbay-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - aqarbay-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Only expose port in development
+    # ports:
+    #   - "6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    container_name: aqarbay-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_CONSOLE_URL:-https://admin.s3.aqarbay.com}
+      MINIO_SERVER_URL: ${MINIO_PUBLIC_URL:-https://s3.aqarbay.com}
+    volumes:
+      - minio_data:/data
+    networks:
+      - aqarbay-network
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: aqarbay-search
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: true
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - aqarbay-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:7700/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Only expose port in development
+    # ports:
+    #   - "7700:7700"
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: aqarbay-api
+    environment:
+      # Database
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-aqarbay}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-aqarbay}
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      # MinIO (internal)
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-aqarbay}
+      MINIO_SECURE: "false"
+      # MinIO (public URL for presigned URLs)
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-https://s3.aqarbay.com}
+      # Web origin
+      PUBLIC_WEB_ORIGIN: ${PUBLIC_WEB_ORIGIN:-https://aqarbay.com}
+      # Meilisearch
+      MEILI_URL: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+    networks:
+      - aqarbay-network
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: aqarbay-web
+    environment:
+      # Public API URL (browser-accessible)
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.aqarbay.com}
+      # Internal API URL (server-side)
+      API_URL: http://api:8000
+      # MinIO public URL for images
+      NEXT_PUBLIC_MINIO_URL: ${MINIO_PUBLIC_URL:-https://s3.aqarbay.com}
+      # Production settings
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: 1
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - aqarbay-network
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  aqarbay-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+  meili_data:
+    driver: local
+
